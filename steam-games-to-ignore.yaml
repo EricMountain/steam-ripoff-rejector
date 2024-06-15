@@ -1,0 +1,20 @@
+developers:
+  kind: list
+  values:
+  - Beam Bong Games
+  - Save Giant Girl
+publishers:
+  kind: list
+  values:
+  - Hede
+  - Save Giant Girl
+  # - Valve
+support_info.url:
+  kind: value
+  values:
+  - http://hede.ru
+support_info.email:
+  kind: value
+  values:
+  - info@hede.ru
+  # - support@quanticlab.com

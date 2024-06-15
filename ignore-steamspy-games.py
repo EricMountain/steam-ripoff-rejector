@@ -28,8 +28,6 @@ def ignore_game(driver, appid):
     driver.get(game_url)
     print("Loading game page")
 
-    # time.sleep(3)
-
     wait = WebDriverWait(driver, 10)
     ignoreBtn = wait.until(EC.element_to_be_clickable((By.ID, "ignoreBtn")))
 
@@ -51,7 +49,7 @@ def ignore_game(driver, appid):
 
 def get_games_from_publisher(field, name):
     games = []
-    path = "./data"
+    path = "./data/steamspy"
     for filename in next(os.walk(path), (None, None, []))[2]:
         with open(os.path.join(path, filename), 'r') as file:
             all_games = json.load(file)
@@ -70,7 +68,7 @@ driver = webdriver.Chrome()
 # Log in to Steam
 login_to_steam(driver)
 
-with open("games_to_ignore.yaml", "r") as f:
+with open("steamspy-games-to-ignore.yaml", "r") as f:
     games_to_ignore = yaml.safe_load(f)
 
     games = []

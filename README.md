@@ -13,3 +13,8 @@
 ## Thanks
 
 Thanks to [SteamSpy](https://steamspy.com) for making the list of games on Steam available.
+
+
+
+select appid, json_extract(details, '$.data.name') from steam_app_details, json_each(details, '$.data.publishers') where json_each.value = 'Valve';
+select appid, json_extract(details, '$.data.name') from steam_app_details where details -> '$.data.support_info.url' like '%http://steamcommunity.com/app/%';
