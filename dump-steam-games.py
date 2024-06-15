@@ -55,7 +55,7 @@ class SteamDumper():
             for appid in appdetails:
                 self.db.upsert_app_details(
                     appid, json.dumps(appdetails[appid]))
-            time.sleep(4)
+            time.sleep(2)
 
 
 if __name__ == '__main__':
