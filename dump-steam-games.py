@@ -8,8 +8,7 @@ import sys
 from threading import Event
 import time
 
-# TODO just import console
-import rich
+from rich.console import Console
 from rich.progress import (
     BarColumn,
     MofNCompleteColumn,
@@ -29,7 +28,7 @@ class SteamDumper():
         self.done_event = done_event
         self.debug = debug
 
-        width = rich.console.Console().width
+        width = Console().width
         self.max_name_width = int(width / 4)
 
         self.progress = Progress(
