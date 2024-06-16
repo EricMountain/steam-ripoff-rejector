@@ -8,6 +8,7 @@ import sys
 from threading import Event
 import time
 
+# TODO just import console
 import rich
 from rich.progress import (
     BarColumn,
@@ -23,10 +24,10 @@ from db import Database
 
 
 class SteamDumper():
-    def __init__(self, debug, done_event):
+    def __init__(self, done_event: Event, debug: bool):
         self.db = Database()
-        self.debug = debug
         self.done_event = done_event
+        self.debug = debug
 
         width = rich.console.Console().width
         self.max_name_width = int(width / 4)
@@ -56,6 +57,7 @@ class SteamDumper():
         if self.debug:
             print(*args, **kwargs)
 
+    # TODO: refactor
     def ellipsise(self, name: str) -> str:
         if len(name) <= self.max_name_width:
             return name
@@ -178,5 +180,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    steam_dumper = SteamDumper(args.debug, done_event)
+    steam_dumper = SteamDumper(done_event, debug)
     steam_dumper.run(args.refresh_list, args.fetch_missing_details)
