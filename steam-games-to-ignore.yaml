@@ -1,17 +1,19 @@
 developers:
   kind: list
   values:
-  - Beam Bong Games
-  - Save Giant Girl
   - Aztech
+  - Beam Bong Games
+  - edybtt Studios
+  - Save Giant Girl
 
 publishers:
   kind: list
   values:
-  #- Hede
-  - Save Giant Girl
   - Aztech
   - Azerbaijan Technology
+  - edybtt Studios
+  - Hede
+  - Save Giant Girl
 
 support_info.url:
   kind: value
