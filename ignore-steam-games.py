@@ -103,7 +103,7 @@ class SteamIgnoreGames():
         if ignored.is_displayed():
             self.db.upsert_game_ignored(appid)
 
-    def get_games_from_publisher(self, type, properties):
+    def get_games_for_criteria(self, type, properties):
         if 'kind' not in properties or 'values' not in properties:
             self.logger.warning(f"No kind/values for type {type}, ignoring")
             return
@@ -128,27 +128,28 @@ class SteamIgnoreGames():
         with open("steam-games-to-ignore.yaml", "r") as f:
             games_to_ignore = yaml.safe_load(f)
 
-            games = []
+            games = {}
             for type in games_to_ignore:
-
                 try:
                     properties = games_to_ignore[type]
                 except KeyError:
                     continue
 
-                g = self.get_games_from_publisher(type, properties)
-                if g is not None and len(g) > 0:
-                    self.logger.debug(g)
-                    self.logger.debug(f"Found {len(g)} games by {
+                games_tmp = self.get_games_for_criteria(type, properties)
+                if games_tmp is not None and len(games_tmp) > 0:
+                    self.logger.debug(games_tmp)
+                    self.logger.debug(f"Found {len(games_tmp)} games by {
                         type} {properties}")
-                    games.extend(g)
+                    for game_tmp in games_tmp:
+                        appid = game_tmp['appid']
+                        if appid not in games:
+                            games[appid] = game_tmp
 
             with self.progress:
                 total = len(games)
                 task = self.progress.add_task(
                     description="", total=total, name="Ignore games")
-                for game in games:
-                    appid = game['appid']
+                for appid, game in games.items():
                     name = game['name']
                     ignored = game['ignored']
 
@@ -192,8 +193,10 @@ if __name__ == '__main__':
 
     verbosity = "INFO"
     if args.debug:
+        print("setting debug")
         verbosity = "DEBUG"
-    logging.basicConfig(level=verbosity, handlers=[RichHandler(level="INFO")])
+    logging.basicConfig(level=verbosity, handlers=[
+                        RichHandler(level=verbosity)])
     logger = logging.getLogger('steam-ignore')
 
     sig = SteamIgnoreGames(logger, done_event)
