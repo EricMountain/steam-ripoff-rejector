@@ -19,8 +19,9 @@ from db import Database
 
 
 class SteamIgnoreGames():
-    def __init__(self):
+    def __init__(self, debug: bool):
         self.db = Database()
+        self.debug = debug
 
     def login_to_steam(self, driver):
         driver.get('https://store.steampowered.com/login/')
@@ -54,8 +55,9 @@ class SteamIgnoreGames():
             ignoreBtn.click()
             time.sleep(1)
             print(f"Ignored {name}: {ignored.is_displayed()}")
-            if ignored.is_displayed():
-                self.db.upsert_game_ignored(appid)
+        # We want the upsert regardless
+        if ignored.is_displayed():
+            self.db.upsert_game_ignored(appid)
 
     def get_games_from_publisher(self, type, properties):
         games = []
@@ -69,12 +71,10 @@ class SteamIgnoreGames():
 
         return games
 
-    def run(self):
-        # Initialize the browser
-        # driver = webdriver.Chrome()
-
-        # Log in to Steam
-        # self.login_to_steam(driver)
+    def run(self, dry_run: bool):
+        if not dry_run:
+            driver = webdriver.Chrome()
+            self.login_to_steam(driver)
 
         with open("steam-games-to-ignore.yaml", "r") as f:
             games_to_ignore = yaml.safe_load(f)
@@ -92,13 +92,32 @@ class SteamIgnoreGames():
                 print(f"Found {len(g)} games by {type} {properties}")
                 games.extend(g)
 
-            # for appid, name in games:
-            #     self.ignore_game(driver, appid, name)
-            #     print(f'Ignored {name} (appid: {appid})')
+            if not dry_run:
+                for appid, name in games:
+                    self.ignore_game(driver, appid, name)
+                    print(f'Ignored {name} (appid: {appid})')
 
-        # driver.quit()
+        if not dry_run:
+            driver.quit()
 
 
 if __name__ == '__main__':
-    sig = SteamIgnoreGames()
-    sig.run()
+    parser = argparse.ArgumentParser(
+        description='Automates ignoring Steam games according to criteria')
+
+    parser.add_argument("--dry-run",
+                        help="Whether to actually ignore games or just list those that would be",
+                        type=bool,
+                        action=argparse.BooleanOptionalAction,
+                        default=True)
+
+    parser.add_argument("--debug",
+                        help="Verbose/debug mode",
+                        type=bool,
+                        action=argparse.BooleanOptionalAction,
+                        default=False)
+
+    args = parser.parse_args()
+
+    sig = SteamIgnoreGames(args.debug)
+    sig.run(args.dry_run)

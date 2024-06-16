@@ -17,6 +17,7 @@ class SchemaUpgradeV0(SchemaUpgrade):
     def upgrade(self):
         self.ddl_create_table_steam_apps()
         self.ddl_create_table_steam_app_details()
+        self.ddl_create_table_steam_app_ignored()
 
     def ddl_create_table_steam_apps(self):
         self.connection.execute('''create table if not exists steam_apps (
@@ -40,7 +41,7 @@ class SchemaUpgradeV0(SchemaUpgrade):
     def ddl_create_table_steam_app_ignored(self):
         self.connection.execute('''create table if not exists steam_apps_ignored (
                                 appid integer not null,
-                                ignored not null char(1),
+                                ignored char(1) not null,
                                 foreign key (appid) references steam_apps (appid)
                                 )
         ''')
