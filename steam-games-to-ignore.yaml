@@ -12,7 +12,6 @@ publishers:
   - Save Giant Girl
   - Aztech
   - Azerbaijan Technology
-  # - Valve
 
 support_info.url:
   kind: value
@@ -23,4 +22,3 @@ support_info.email:
   kind: value
   values:
   - info@hede.ru
-  # - support@quanticlab.com
