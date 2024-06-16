@@ -36,3 +36,20 @@ class SchemaUpgradeV0(SchemaUpgrade):
                                  details blob not null
                                  )
                               ''')
+
+    def ddl_create_table_steam_app_ignored(self):
+        self.connection.execute('''create table if not exists steam_apps_ignored (
+                                appid integer not null,
+                                ignored not null char(1),
+                                foreign key (appid) references steam_apps (appid)
+                                )
+        ''')
+        self.connection.execute('''create unique index if not exists steam_apps_ignored_1 on steam_apps_ignored (
+                                 appid
+                                 )
+                              ''')
+        self.connection.execute('''create index if not exists steam_apps_ignored_2 on steam_apps_ignored (
+                                 ignored,
+                                 appid
+                                 )
+                              ''')

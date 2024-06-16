@@ -92,7 +92,6 @@ class Database():
         return entries
 
     def list_apps_value_filter(self, key: str, value: str):
-        # self.connection.set_trace_callback(print)
         entries = []
         key_param = f"$.data.{key}"
         with self.connection:
@@ -111,3 +110,15 @@ class Database():
                 entries.append(entry)
 
         return entries
+
+    def upsert_game_ignored(self, appid: int):
+        with self.connection:
+            cursor = self.connection.cursor()
+            query = '''
+                  insert into steam_apps_ignored(appid, ignored)
+                  values(?, 'Y')
+                  on conflict(appid) do
+                  update set
+                    ignored = 'Y'
+                  '''
+            cursor.execute(query, (appid,))

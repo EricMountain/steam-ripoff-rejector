@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import os
 import os.path
@@ -29,7 +30,7 @@ class SteamIgnoreGames():
 
         print("Logged in")
 
-    def ignore_game(self, driver, appid):
+    def ignore_game(self, driver, appid, name):
         game_url = f'https://store.steampowered.com/app/{appid}/'
         driver.get(game_url)
         print("Loading game page")
@@ -46,12 +47,15 @@ class SteamIgnoreGames():
         print(ignore, ignore.is_displayed())
         print(ignored, ignored.is_displayed())
 
+        # TODO: rewrite this logic and add retries or wait until ignored is displayed iso using a sleep
         if ignored.is_displayed():
-            print("Game is already ignored, skipping")
+            print(f"{name} is already ignored, skipping")
         else:
             ignoreBtn.click()
             time.sleep(1)
-            print("Ignoring game", ignored.is_displayed())
+            print(f"Ignored {name}: {ignored.is_displayed()}")
+            if ignored.is_displayed():
+                self.db.upsert_game_ignored(appid)
 
     def get_games_from_publisher(self, type, properties):
         games = []
@@ -89,7 +93,7 @@ class SteamIgnoreGames():
                 games.extend(g)
 
             # for appid, name in games:
-            #     self.ignore_game(driver, appid)
+            #     self.ignore_game(driver, appid, name)
             #     print(f'Ignored {name} (appid: {appid})')
 
         # driver.quit()
