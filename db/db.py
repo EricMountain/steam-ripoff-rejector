@@ -28,12 +28,24 @@ class Database():
                 '''
         cursor.execute(query, (appid, name))
 
+    def get_app_count(self) -> int:
+        entries = []
+        with self.connection:
+            cursor = self.connection.cursor()
+            query = '''
+                  select count(*) count
+                  from steam_apps
+                  '''
+            cursor.execute(query)
+
+            return next(cursor)["count"]
+
     def list_apps_missing_details(self):
         entries = []
         with self.connection:
             cursor = self.connection.cursor()
             query = '''
-                  select sa.appid appid
+                  select sa.appid appid, sa.name name
                   from steam_apps sa left join steam_app_details sad on (sa.appid = sad.appid)
                   where sad.appid is null
                   '''

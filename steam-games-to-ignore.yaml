@@ -3,16 +3,22 @@ developers:
   values:
   - Beam Bong Games
   - Save Giant Girl
+  - Aztech
+
 publishers:
   kind: list
   values:
-  - Hede
+  #- Hede
   - Save Giant Girl
+  - Aztech
+  - Azerbaijan Technology
   # - Valve
+
 support_info.url:
   kind: value
   values:
   - http://hede.ru
+
 support_info.email:
   kind: value
   values:

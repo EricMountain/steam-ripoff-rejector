@@ -33,11 +33,22 @@ class SteamDumper():
         self.db.connection.commit()
 
     def fetch_missing_details(self):
+        # 1" is too short, but 2" works fine
+        sleep_time = 1.1
+        penalty = 0.1
+        grace = 0.01
+        rate_limit_upper_bound_sleep_time = 0
+
         appids = self.db.list_apps_missing_details()
-        print(f"total missing {len(appids)}")
+        app_count = self.db.get_app_count()
+        missing_count = len(appids)
+        missing_pct = missing_count * 100 / app_count
+        print(f"Total missing {missing_count}, {missing_pct:.2f}%")
+        fetched = 0
         for appid_row in appids:
             appid = appid_row['appid']
-            print(f"missing {appid}")
+            name = appid_row['name']
+            print(f"Fetching details for {name} / {appid}")
             url = f"https://store.steampowered.com/api/appdetails?appids={
                 appid}"
             retry = True
@@ -45,17 +56,38 @@ class SteamDumper():
                 retry = False
                 response = requests.get(url)
                 if response.status_code != 200:
-                    print(f"{response.status_code}: {response.headers}")
+                    print(f"Unexpected server response code {
+                          response.status_code}: {response.headers}")
                     if response.status_code == 429:
-                        time.sleep(300)
+                        # Rate limited
+                        rate_limit_upper_bound_sleep_time = sleep_time
+                        sleep_time += penalty
+                        print(f"Rate limit penalty applied. Sleep time: {
+                              sleep_time}")
+                        time.sleep(120)
                         retry = True
                     else:
-                        sys.exit(1)
-            appdetails = response.json()
-            for appid in appdetails:
-                self.db.upsert_app_details(
-                    appid, json.dumps(appdetails[appid]))
-            time.sleep(2)
+                        # Pause and skip, we’ll retry next run anyway
+                        time.sleep(30)
+                        break
+            else:
+                appdetails = response.json()
+                for appid in appdetails:
+                    self.db.upsert_app_details(
+                        appid, json.dumps(appdetails[appid]))
+
+                fetched += 1
+                if fetched % 100 == 0:
+                    sleep_time_tmp = sleep_time - grace
+                    if sleep_time_tmp > rate_limit_upper_bound_sleep_time:
+                        sleep_time = sleep_time_tmp
+
+                    missing_tmp = missing_count - fetched
+                    missing_tmp_pct = missing_tmp * 100 / app_count
+                    print(f'Total missing {missing_tmp} / {
+                          missing_tmp_pct:.2f}%. Sleep time: {sleep_time}')
+
+                time.sleep(sleep_time)
 
 
 if __name__ == '__main__':
