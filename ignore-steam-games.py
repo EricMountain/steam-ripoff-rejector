@@ -156,6 +156,8 @@ class SteamIgnoreGames():
 
                     if not dry_run and ignored != 'Y':
                         self.ignore_game(driver, appid, name)
+                    elif ignored == 'Y':
+                        self.logger.debug(f"{name} already ignored")
 
                     self.progress.update(task, advance=1)
 
