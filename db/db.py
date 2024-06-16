@@ -77,8 +77,9 @@ class Database():
         with self.connection:
             cursor = self.connection.cursor()
             query = '''
-                  select appid, json_extract(details, '$.data.name') name
-                  from steam_app_details, json_each(details, ?)
+                  select sad.appid appid, json_extract(sad.details, '$.data.name') name, sai.ignored ignored
+                  from steam_app_details as sad
+                    left join steam_apps_ignored as sai using (appid), json_each(sad.details, ?)
                   where json_each.value = ?
                   '''
             cursor.execute(query, (key_param, value))
@@ -97,8 +98,9 @@ class Database():
         with self.connection:
             cursor = self.connection.cursor()
             query = '''
-                  select appid, json_extract(details, '$.data.name') name
-                  from steam_app_details
+                  select sad.appid appid, json_extract(sad.details, '$.data.name') name, sai.ignored ignored
+                  from steam_app_details as sad
+                    left join steam_apps_ignored as sai using (appid)
                   where json_extract(details, ?) = ?
                   '''
             cursor.execute(query, (key_param, value))

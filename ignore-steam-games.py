@@ -2,11 +2,26 @@
 
 import argparse
 import json
+import logging
 import os
 import os.path
 import requests
+import signal
+from threading import Event
 import time
 import yaml
+
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TaskID,
+    TextColumn,
+    TimeRemainingColumn,
+)
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -19,9 +34,38 @@ from db import Database
 
 
 class SteamIgnoreGames():
-    def __init__(self, debug: bool):
+    def __init__(self, logger, done_event: Event):
         self.db = Database()
-        self.debug = debug
+        self.logger = logger
+        self.done_event = done_event
+
+        width = Console().width
+        self.max_name_width = int(width / 4)
+
+        self.progress = Progress(
+            SpinnerColumn(spinner_name='moon'),
+            TextColumn(
+                "[bold blue]{task.fields[name]:" + str(self.max_name_width) + "}", justify="right"),
+            BarColumn(bar_width=None),
+            "[progress.percentage]{task.percentage:>3.1f}%",
+            "•",
+            MofNCompleteColumn(),
+            "•",
+            TimeRemainingColumn(elapsed_when_finished=True),
+        )
+
+    # TODO: refactor this somewhere
+    def ellipsise(self, name: str) -> str:
+        if len(name) <= self.max_name_width:
+            return name
+
+        half = int(self.max_name_width / 2)
+        remainder = self.max_name_width % 2
+
+        left = name[:half-(1-remainder)]
+        right = name[-half:]
+
+        return left + "…" + right
 
     def login_to_steam(self, driver):
         driver.get('https://store.steampowered.com/login/')
@@ -29,12 +73,12 @@ class SteamIgnoreGames():
         wait = WebDriverWait(driver, 60)
         wait.until(EC.title_is("Welcome to Steam"))
 
-        print("Logged in")
+        self.logger.debug("Logged in")
 
     def ignore_game(self, driver, appid, name):
         game_url = f'https://store.steampowered.com/app/{appid}/'
+        self.logger.debug(f"Loading game page: {game_url}")
         driver.get(game_url)
-        print("Loading game page")
 
         wait = WebDriverWait(driver, 10)
         ignoreBtn = wait.until(
@@ -45,21 +89,25 @@ class SteamIgnoreGames():
         ignored = driver.find_element(
             By.XPATH, '//div[@id="ignoreBtn"]//span[contains(text(),"Ignored")]')
 
-        print(ignore, ignore.is_displayed())
-        print(ignored, ignored.is_displayed())
+        self.logger.debug(ignore, ignore.is_displayed())
+        self.logger.debug(ignored, ignored.is_displayed())
 
         # TODO: rewrite this logic and add retries or wait until ignored is displayed iso using a sleep
         if ignored.is_displayed():
-            print(f"{name} is already ignored, skipping")
+            self.logger.debug(f"{name} is already ignored, skipping")
         else:
             ignoreBtn.click()
             time.sleep(1)
-            print(f"Ignored {name}: {ignored.is_displayed()}")
+            self.logger.debug(f"Ignored {name}: {ignored.is_displayed()}")
         # We want the upsert regardless
         if ignored.is_displayed():
             self.db.upsert_game_ignored(appid)
 
     def get_games_from_publisher(self, type, properties):
+        if 'kind' not in properties or 'values' not in properties:
+            self.logger.warning(f"No kind/values for type {type}, ignoring")
+            return
+
         games = []
         for value in properties['values']:
             if properties['kind'] == 'list':
@@ -67,7 +115,8 @@ class SteamIgnoreGames():
             elif properties['kind'] == 'value':
                 games.extend(self.db.list_apps_value_filter(type, value))
             else:
-                print(f"Unknown filter kind: {properties}")
+                self.logger.warning(
+                    f"Unknown filter kind, ignoring: {properties}")
 
         return games
 
@@ -81,27 +130,47 @@ class SteamIgnoreGames():
 
             games = []
             for type in games_to_ignore:
-                print(type, games_to_ignore[type])
+
                 try:
                     properties = games_to_ignore[type]
                 except KeyError:
                     continue
 
                 g = self.get_games_from_publisher(type, properties)
-                print(g)
-                print(f"Found {len(g)} games by {type} {properties}")
-                games.extend(g)
+                if g is not None and len(g) > 0:
+                    self.logger.debug(g)
+                    self.logger.debug(f"Found {len(g)} games by {
+                        type} {properties}")
+                    games.extend(g)
 
-            if not dry_run:
-                for appid, name in games:
-                    self.ignore_game(driver, appid, name)
-                    print(f'Ignored {name} (appid: {appid})')
+            with self.progress:
+                total = len(games)
+                task = self.progress.add_task(
+                    description="", total=total, name="Ignore games")
+                for game in games:
+                    appid = game['appid']
+                    name = game['name']
+                    ignored = game['ignored']
+
+                    self.progress.update(task, name=self.ellipsise(name))
+
+                    if not dry_run and ignored != 'Y':
+                        self.ignore_game(driver, appid, name)
+
+                    self.progress.update(task, advance=1)
 
         if not dry_run:
             driver.quit()
 
 
+def handle_sigint(signum, frame):
+    done_event.set()
+
+
 if __name__ == '__main__':
+    done_event = Event()
+    signal.signal(signal.SIGINT, handle_sigint)
+
     parser = argparse.ArgumentParser(
         description='Automates ignoring Steam games according to criteria')
 
@@ -119,5 +188,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    sig = SteamIgnoreGames(args.debug)
+    verbosity = "INFO"
+    if args.debug:
+        verbosity = "DEBUG"
+    logging.basicConfig(level=verbosity, handlers=[RichHandler(level="INFO")])
+    logger = logging.getLogger('steam-ignore')
+
+    sig = SteamIgnoreGames(logger, done_event)
     sig.run(args.dry_run)
