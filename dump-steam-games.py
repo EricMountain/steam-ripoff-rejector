@@ -128,10 +128,14 @@ class SteamDumper():
                             time.sleep(30)
                             break
                 else:
-                    appdetails = response.json()
-                    for appid in appdetails:
-                        self.db.upsert_app_details(
-                            appid, json.dumps(appdetails[appid]))
+                    try:
+                        appdetails = response.json()
+                        for appid in appdetails:
+                            self.db.upsert_app_details(
+                                appid, json.dumps(appdetails[appid]))
+                    except requests.exceptions.JSONDecodeError as err:
+                        print(f"Unexpected {err=}, {type(err)=}")
+                        print(f"{response.content}")
 
                     fetched += 1
                     self.progress.update(
@@ -179,5 +183,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    steam_dumper = SteamDumper(done_event, debug)
+    steam_dumper = SteamDumper(done_event, args.debug)
     steam_dumper.run(args.refresh_list, args.fetch_missing_details)
