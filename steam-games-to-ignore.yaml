@@ -1,0 +1,26 @@
+developers:
+  kind: list
+  values:
+  - Aztech
+  - Beam Bong Games
+  - edybtt Studios
+  - Save Giant Girl
+
+publishers:
+  kind: list
+  values:
+  - Aztech
+  - Azerbaijan Technology
+  - edybtt Studios
+  - Hede
+  - Save Giant Girl
+
+support_info.url:
+  kind: value
+  values:
+  - http://hede.ru
+
+support_info.email:
+  kind: value
+  values:
+  - info@hede.ru

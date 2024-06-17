@@ -20,7 +20,7 @@ def get_games():
         response = requests.get(url)
         games = response.json()
 
-        filename = f'data/page_{page}.json'
+        filename = f'data/steamspy/page_{page}.json'
         with open(filename, 'w') as file:
             file.write(response.text)
 
