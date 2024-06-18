@@ -28,6 +28,9 @@ class SteamDumper():
         self.done_event = done_event
         self.debug = debug
 
+        # Timeout for HTTP requests
+        self.timeout = 20
+
         width = Console().width
         self.max_name_width = int(width / 4)
 
@@ -71,7 +74,7 @@ class SteamDumper():
 
     def refresh_list(self):
         url = 'http://api.steampowered.com/ISteamApps/GetAppList/v0002/?format=json'
-        response = requests.get(url)
+        response = requests.get(url, timeout=self.timeout)
         applist = response.json()
 
         self.db.connection.execute("BEGIN")
@@ -111,7 +114,11 @@ class SteamDumper():
                 retry = True
                 while retry:
                     retry = False
-                    response = requests.get(url)
+                    try:
+                        response = requests.get(url, timeout=self.timeout)
+                    except requests.exceptions.RequestException as e:
+                        self.debug_print(f"Exception fetching {url}: {e}")
+                        break
                     if response.status_code != 200:
                         self.debug_print(f"Unexpected server response code {
                             response.status_code}: {response.headers}")
