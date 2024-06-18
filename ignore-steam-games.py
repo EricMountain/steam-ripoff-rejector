@@ -141,24 +141,21 @@ class SteamIgnoreGames:
                     )
                     for game_tmp in games_tmp:
                         appid = game_tmp["appid"]
-                        if appid not in games:
+                        if appid not in games and not game_tmp["ignored"]:
                             games[appid] = game_tmp
 
             with self.progress:
                 total = len(games)
-                task = self.progress.add_task(
-                    description="", total=total, name="Ignore games"
+                self.logger.info(
+                    f"Found {total} unique games that aren’t already ignored"
                 )
+                task = self.progress.add_task(description="", total=total, name="")
                 for appid, game in games.items():
                     name = game["name"]
-                    ignored = game["ignored"]
-
                     self.progress.update(task, name=self.ellipsise(name))
 
-                    if not dry_run and ignored != "Y":
+                    if not dry_run:
                         self.ignore_game(driver, appid, name)
-                    elif ignored == "Y":
-                        self.logger.debug(f"{name} already ignored")
 
                     self.progress.update(task, advance=1)
 
