@@ -133,6 +133,8 @@ class SteamIgnoreGames():
                 try:
                     properties = games_to_ignore[type]
                 except KeyError:
+                    self.logger.warning(
+                        f"Invalid configuration: no properties for type {type}, ignoring")
                     continue
 
                 games_tmp = self.get_games_for_criteria(type, properties)
