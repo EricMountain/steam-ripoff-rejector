@@ -139,9 +139,8 @@ class SteamIgnoreGames():
 
                 games_tmp = self.get_games_for_criteria(type, properties)
                 if games_tmp is not None and len(games_tmp) > 0:
-                    self.logger.debug(games_tmp)
-                    self.logger.debug(f"Found {len(games_tmp)} games by {
-                        type} {properties}")
+                    self.logger.info(
+                        f"Found {len(games_tmp)} games for filter `{type}`")
                     for game_tmp in games_tmp:
                         appid = game_tmp['appid']
                         if appid not in games:
@@ -194,11 +193,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     verbosity = "INFO"
+    console_fmt = "%(message)s"
+    show_level = show_path = show_time = False
     if args.debug:
-        print("setting debug")
         verbosity = "DEBUG"
-    logging.basicConfig(level=verbosity, handlers=[
-                        RichHandler(level=verbosity)])
+        show_level = show_path = show_time = True
+    handler = RichHandler(level=verbosity, show_time=show_time,
+                          show_level=show_level, show_path=show_path, markup=True)
+    handler.setFormatter(logging.Formatter(console_fmt))
+    logging.basicConfig(level=verbosity, handlers=[handler])
     logger = logging.getLogger('steam-ignore')
 
     sig = SteamIgnoreGames(logger, done_event)
