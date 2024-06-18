@@ -128,7 +128,7 @@ class SteamDumper:
                         self.logger.info(f"Exception fetching {url}: {e}")
                         break
                     if response.status_code != 200:
-                        self.logger.warn(f"Unexpected server response code {
+                        self.logger.warning(f"Unexpected server response code {
                             response.status_code}: {response.headers}")
                         if response.status_code == 429:
                             # Rate limited
