@@ -117,14 +117,10 @@ class SteamIgnoreGames:
         return games
 
     def run(self, dry_run: bool):
-        if not dry_run:
-            driver = webdriver.Chrome()
-            self.login_to_steam(driver)
-
+        games = {}
+        ignored_games = {}
         with open("steam-games-to-ignore.yaml", "r") as f:
             games_to_ignore = yaml.safe_load(f)
-
-            games = {}
             for type in games_to_ignore:
                 try:
                     properties = games_to_ignore[type]
@@ -143,21 +139,32 @@ class SteamIgnoreGames:
                         appid = game_tmp["appid"]
                         if appid not in games and not game_tmp["ignored"]:
                             games[appid] = game_tmp
+                        if appid not in ignored_games and game_tmp["ignored"]:
+                            ignored_games[appid] = True
 
-            with self.progress:
-                total = len(games)
-                self.logger.info(
-                    f"Found {total} unique games that aren’t already ignored"
-                )
-                task = self.progress.add_task(description="", total=total, name="")
-                for appid, game in games.items():
-                    name = game["name"]
-                    self.progress.update(task, name=self.ellipsise(name))
+        ignored_total = len(ignored_games)
+        self.logger.info(f"{ignored_total} unique games already ignored")
 
-                    if not dry_run:
-                        self.ignore_game(driver, appid, name)
+        total = len(games)
+        if total == 0:
+            self.logger.info("No games remaining to ignore")
+            return
+        self.logger.info(f"{total} unique games to ignore")
 
-                    self.progress.update(task, advance=1)
+        if not dry_run:
+            driver = webdriver.Chrome()
+            self.login_to_steam(driver)
+
+        with self.progress:
+            task = self.progress.add_task(description="", total=total, name="")
+            for appid, game in games.items():
+                name = game["name"]
+                self.progress.update(task, name=self.ellipsise(name))
+
+                if not dry_run:
+                    self.ignore_game(driver, appid, name)
+
+                self.progress.update(task, advance=1)
 
         if not dry_run:
             driver.quit()
