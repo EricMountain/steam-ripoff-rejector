@@ -1,26 +1,43 @@
-developers:
-  kind: list
-  values:
-  - Aztech
-  - Beam Bong Games
-  - edybtt Studios
-  - Save Giant Girl
+filters:
+  developers:
+    kind: list
+    values:
+    - Aztech
+    - Beam Bong Games
+    - edybtt Studios
+    - Save Giant Girl
 
-publishers:
-  kind: list
-  values:
-  - Aztech
-  - Azerbaijan Technology
-  - edybtt Studios
-  - Hede
-  - Save Giant Girl
+  publishers:
+    kind: list
+    values:
+    - Aztech
+    - Azerbaijan Technology
+    - edybtt Studios
+    - Hede
+    - Save Giant Girl
 
-support_info.url:
-  kind: value
-  values:
-  - http://hede.ru
+  support_info.url:
+    kind: value
+    values:
+    - http://hede.ru
 
-support_info.email:
-  kind: value
-  values:
-  - info@hede.ru
+  support_info.email:
+    kind: value
+    values:
+    - info@hede.ru
+
+queries:
+  - description: Games lacking publisher, developer, website and support info
+    query: |
+      select appid, json_extract(details, '$.data.name') name, sai.ignored ignored
+      from steam_app_details sad
+        left join steam_apps_ignored as sai using (appid)
+      where json_extract(details, '$.data.type') = 'game'
+      and json_extract(details, '$.data.name') not like '%Playtest'
+      and json_extract(details, '$.data.publishers[0]') = ''
+      and json_extract(details, '$.data.developers') is null
+      and json_extract(details, '$.data.detailed_description') <> ''
+      and json_extract(details, '$.data.price_overview.final_formatted') <> ''
+      and (json_extract(details, '$.data.website') is null or json_extract(details, '$.data.website') = '')
+      and (json_extract(details, '$.data.support_info.url') is null or json_extract(details, '$.data.support_info.url') = '')
+      and (json_extract(details, '$.data.support_info.email') is null or json_extract(details, '$.data.support_info.email') = '');

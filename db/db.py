@@ -108,6 +108,20 @@ class Database:
 
         return entries
 
+    def list_apps_for_query(self, query: str):
+        entries = []
+        with self.connection:
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+
+            for row in cursor:
+                entry = {}
+                for col in row.keys():
+                    entry[col] = row[col]
+                entries.append(entry)
+
+        return entries
+
     def upsert_game_ignored(self, appid: int):
         with self.connection:
             cursor = self.connection.cursor()

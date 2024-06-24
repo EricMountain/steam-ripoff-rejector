@@ -116,31 +116,70 @@ class SteamIgnoreGames:
 
         return games
 
+    def get_games_for_filters(self, filters, games, ignored_games):
+        games = {}
+        ignored_games = {}
+        for type in filters:
+            try:
+                properties = filters[type]
+            except KeyError:
+                self.logger.warning(
+                    f"Invalid configuration: no properties for type {type}, ignoring"
+                )
+                continue
+
+            games_tmp = self.get_games_for_criteria(type, properties)
+            if games_tmp is not None and len(games_tmp) > 0:
+                self.logger.info(f"Found {len(games_tmp)} games for filter `{type}`")
+                for game_tmp in games_tmp:
+                    appid = game_tmp["appid"]
+                    if appid not in games and not game_tmp["ignored"]:
+                        games[appid] = game_tmp
+                    if appid not in ignored_games and game_tmp["ignored"]:
+                        ignored_games[appid] = True
+        return (games, ignored_games)
+
+    def get_games_for_queries(self, queries, games, ignored_games):
+        games = {}
+        ignored_games = {}
+        for query in queries:
+            try:
+                description = query["description"]
+                q = query["query"]
+            except KeyError:
+                self.logger.warning(
+                    f"Invalid configuration: no description or query in {query}"
+                )
+                continue
+
+            games_tmp = self.db.list_apps_for_query(q)
+            if games_tmp is not None and len(games_tmp) > 0:
+                self.logger.info(
+                    f"Found {len(games_tmp)} games for query `{description}`"
+                )
+                for game_tmp in games_tmp:
+                    appid = game_tmp["appid"]
+                    if appid not in games and not game_tmp["ignored"]:
+                        games[appid] = game_tmp
+                    if appid not in ignored_games and game_tmp["ignored"]:
+                        ignored_games[appid] = True
+
+        return (games, ignored_games)
+
     def run(self, dry_run: bool):
         games = {}
         ignored_games = {}
         with open("steam-games-to-ignore.yaml", "r") as f:
-            games_to_ignore = yaml.safe_load(f)
-            for type in games_to_ignore:
-                try:
-                    properties = games_to_ignore[type]
-                except KeyError:
-                    self.logger.warning(
-                        f"Invalid configuration: no properties for type {type}, ignoring"
-                    )
-                    continue
-
-                games_tmp = self.get_games_for_criteria(type, properties)
-                if games_tmp is not None and len(games_tmp) > 0:
-                    self.logger.info(
-                        f"Found {len(games_tmp)} games for filter `{type}`"
-                    )
-                    for game_tmp in games_tmp:
-                        appid = game_tmp["appid"]
-                        if appid not in games and not game_tmp["ignored"]:
-                            games[appid] = game_tmp
-                        if appid not in ignored_games and game_tmp["ignored"]:
-                            ignored_games[appid] = True
+            y = yaml.safe_load(f)
+            map = {
+                "filters": self.get_games_for_filters,
+                "queries": self.get_games_for_queries,
+            }
+            for mode, func in map.items():
+                if mode in y:
+                    (games_tmp, ignored_games_tmp) = func(y[mode], games, ignored_games)
+                    games |= games_tmp
+                    ignored_games |= ignored_games_tmp
 
         ignored_total = len(ignored_games)
         self.logger.info(f"{ignored_total} unique games already ignored")
