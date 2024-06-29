@@ -6,6 +6,18 @@ filters:
     - Beam Bong Games
     - edybtt Studios
     - Save Giant Girl
+    - anyfreemore
+    - freeanygame
+    - Awesome Deveelop
+    - Gradient Studios
+    - Tuning Mania
+    - QuickBobber
+    - Crazy DEVs
+    - INFINITE BRIDGE
+    - Atomic Fabrik
+    - Cristian Manolachi
+    - Dejavu Games
+    - MXAVIERGAMES
 
   publishers:
     kind: list
@@ -15,6 +27,18 @@ filters:
     - edybtt Studios
     - Hede
     - Save Giant Girl
+    - anyfreemore
+    - freeanygame
+    - Awesome Deveelop
+    - Gradient Studios
+    - Tuning Mania
+    - QuickBobber
+    - Crazy DEVs
+    - INFINITE BRIDGE
+    - Atomic Fabrik
+    - Cristian Manolachi
+    - Dejavu Games
+    - MXAVIERGAMES
 
   support_info.url:
     kind: value
